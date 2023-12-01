@@ -93,7 +93,7 @@ pub struct OneOfManyProof {
 }
 
 impl OneOfManyProof {
-    fn from_bytes(bytes: &[u8]) -> Option<OneOfManyProof> {
+    pub fn from_bytes(bytes: &[u8]) -> Option<OneOfManyProof> {
         let b = CompressedRistretto::from_slice(&bytes[0..32]).ok()?;
         let (bit_proof, new_len) = BitProof::from_bytes(&bytes[32..])?;
         let poly_len = bytes[new_len] as usize;
