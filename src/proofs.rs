@@ -6,7 +6,8 @@ use core::iter::{self, Iterator};
 use core::ops::Mul;
 use core::slice;
 use curve25519_dalek::constants;
-use curve25519_dalek::ristretto::RistrettoPoint;
+use curve25519_dalek::digest::typenum::bit;
+use curve25519_dalek::ristretto::{CompressedRistretto, RistrettoPoint};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::IsIdentity;
 use merlin::Transcript;
@@ -44,6 +45,40 @@ pub struct BitProof {
     z_C: Scalar,
 }
 
+impl BitProof {
+    pub fn from_bytes(bytes: &[u8]) -> Option<(BitProof, usize)> {
+        let a = CompressedRistretto::from_slice(&bytes[0..32]).ok()?;
+        let c = CompressedRistretto::from_slice(&bytes[32..64]).ok()?;
+        let d = CompressedRistretto::from_slice(&bytes[64..96]).ok()?;
+        let len = bytes[96] as usize;
+        let f1_j = (0..len)
+            .map(|i| {
+                let mut new_buf = [0u8; 32];
+                new_buf.copy_from_slice(&bytes[97 + i * 32..129 + i * 32]);
+                Scalar::from_canonical_bytes(new_buf).expect("Invalid scalar")
+            })
+            .collect::<Vec<Scalar>>();
+        let new_len = bytes[97 + len * 32] as usize;
+        let mut new_buf = [0u8; 32];
+        new_buf.copy_from_slice(&bytes[98 + len * 32..130 + len * 32]);
+        let z_a = Scalar::from_bytes_mod_order(new_buf);
+        let mut new_buf = [0u8; 32];
+        new_buf.copy_from_slice(&bytes[130 + len * 32..162 + len * 32]);
+        let z_c = Scalar::from_bytes_mod_order(new_buf);
+        Some((
+            BitProof {
+                A: a.decompress()?,
+                C: c.decompress()?,
+                D: d.decompress()?,
+                f1_j,
+                z_A: z_a,
+                z_C: z_c,
+            },
+            new_len + 64,
+        ))
+    }
+}
+
 /// A zero knowledge proof of membership in a set. A prover can convince a
 /// verifier that he knows the index of a commitment within a set of
 /// commitments, and the opening of that commitment,
@@ -55,6 +90,28 @@ pub struct OneOfManyProof {
     bit_proof: BitProof,
     G_k: Polynomial<RistrettoPoint>,
     z: Scalar,
+}
+
+impl OneOfManyProof {
+    fn from_bytes(bytes: &[u8]) -> Option<OneOfManyProof> {
+        let b = CompressedRistretto::from_slice(&bytes[0..32]).ok()?;
+        let (bit_proof, new_len) = BitProof::from_bytes(&bytes[32..])?;
+        let poly_len = bytes[new_len] as usize;
+        let mut G_k = Polynomial::new();
+        for i in 0..poly_len {
+            let g = CompressedRistretto::from_slice(&bytes[new_len + 1 + i * 32..]).ok()?;
+            G_k[i] = g.decompress()?;
+        }
+        let mut new_buf = [0u8; 32];
+        new_buf.copy_from_slice(&bytes[new_len + 1 + poly_len * 32..]);
+        let z = Scalar::from_bytes_mod_order(new_buf);
+        Some(OneOfManyProof {
+            B: b.decompress()?,
+            bit_proof,
+            G_k,
+            z,
+        })
+    }
 }
 
 impl ProofGens {
