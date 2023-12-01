@@ -8,7 +8,7 @@ license-file = "LICENSE"
 repository = "https://github.com/cargodog/one-of-many-proofs"
 
 [dependencies]
-rand = "0.8"
+# rand = "0.8"
 polynomials = "0.2"
 
 [dependencies.curve25519-dalek]
@@ -36,6 +36,7 @@ serde_cbor = "0.11"
 [features]
 default = ["std", "serde"]
 std = []
+rand = []
 
 [[bench]]
 name = "proof_benchmarks"
