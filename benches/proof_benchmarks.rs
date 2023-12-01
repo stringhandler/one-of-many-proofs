@@ -12,7 +12,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let l: usize = 1; // Index within the set, of the prover's commitment
-    let v = Scalar::zero(); // Must prove commitment to zero
+    let v = Scalar::ZERO; // Must prove commitment to zero
     let r = Scalar::random(&mut OsRng); // Blinding factor for prover's commitment
 
     let gens = ProofGens::new(6).unwrap(); // Set generators

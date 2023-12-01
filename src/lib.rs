@@ -156,7 +156,6 @@
 //! * [Lelandus: Towards Confidentiality and Anonymity of Blockchain Transactions From Standard Assumptions](https://eprint.iacr.org/2019/373)
 
 #![no_std]
-#![feature(test)]
 
 //-----------------------------------------------------------------------------
 // External dependencies:

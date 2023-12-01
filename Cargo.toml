@@ -8,21 +8,20 @@ license-file = "LICENSE"
 repository = "https://github.com/cargodog/one-of-many-proofs"
 
 [dependencies]
-rand = "0.7"
+rand = "0.8"
 polynomials = "0.2"
 
 [dependencies.curve25519-dalek]
-default-features = false
-version = "2"
-features = ["simd_backend", "nightly", "serde", "alloc"]
+version = "4.1.1"
+features = ["serde", "digest", "rand_core"]
 
 [dependencies.sha3]
 default-features = false
-version = "0.8"
+version = "0.10"
 
 [dependencies.merlin]
 default-features = false
-version = "2"
+version = "3"
 
 [dependencies.serde]
 default-features = false

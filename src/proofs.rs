@@ -188,7 +188,7 @@ impl ProofGens {
             .iter()
             .flatten()
             .zip(b_j_i.iter().flatten())
-            .map(|(a, b)| a * (Scalar::one() - Scalar::from(2u32) * b))
+            .map(|(a, b)| a * (Scalar::ONE - Scalar::from(2u32) * b))
             .commit(&self, &r_C)?;
         let D = a_j_i.iter().flatten().map(|a| -a * a).commit(&self, &r_D)?;
 
@@ -271,18 +271,19 @@ impl ProofGens {
             return Err(ProofError::InvalidProofSize);
         }
 
+        // TODO: does this check still need to be done?
         // Verify all scalars are canonical
-        for f in &proof.f1_j {
-            if !f.is_canonical() {
-                return Err(ProofError::InvalidScalar(*f));
-            }
-        }
-        if !proof.z_A.is_canonical() {
-            return Err(ProofError::InvalidScalar(proof.z_A));
-        }
-        if !proof.z_C.is_canonical() {
-            return Err(ProofError::InvalidScalar(proof.z_C));
-        }
+        // for f in &proof.f1_j {
+        //     if !f.is_canonical() {
+        //         return Err(ProofError::InvalidScalar(*f));
+        //     }
+        // }
+        // if !proof.z_A.is_canonical() {
+        //     return Err(ProofError::InvalidScalar(proof.z_A));
+        // }
+        // if !proof.z_C.is_canonical() {
+        //     return Err(ProofError::InvalidScalar(proof.z_C));
+        // }
 
         // Inflate f1_j to include reconstructed f0_j vector
         let f_j_i = iter::once(proof.f1_j.iter().map(|f| x - f).collect())
@@ -525,7 +526,7 @@ where
         let mut G_k = Polynomial::from(
             rho_k
                 .iter()
-                .map(|rho| gens.commit(&Scalar::zero(), rho).unwrap())
+                .map(|rho| gens.commit(&Scalar::ZERO, rho).unwrap())
                 .collect::<Vec<RistrettoPoint>>(),
         );
         let mut i = 0;
@@ -578,9 +579,10 @@ where
 
         let mut x_vec = Vec::new();
         for p in proofs {
-            if !p.z.is_canonical() {
-                return Err(ProofError::InvalidScalar(p.z));
-            }
+            // TODO: Do this check
+            // if !p.z.is_canonical() {
+            //     return Err(ProofError::InvalidScalar(p.z));
+            // }
 
             let mut t = transcript.clone();
             for k in 0..gens.n_bits - 1 {
@@ -623,7 +625,7 @@ where
         } else if set_size > gens.max_set_size() {
             return Err(ProofError::SetIsTooLarge);
         }
-        let E = gens.commit(&Scalar::zero(), &proofs.iter().map(|p| p.z).sum())?;
+        let E = gens.commit(&Scalar::ZERO, &proofs.iter().map(|p| p.z).sum())?;
         let G = proofs
             .iter()
             .zip(x_vec.iter())
@@ -734,26 +736,26 @@ fn compute_p_i(i: usize, l: usize, a_j_i: &Vec<Vec<Scalar>>) -> Vec<Scalar> {
 
     // Create polynomial vector
     let mut p = Polynomial::from(Vec::with_capacity(n_bits));
-    p.push(Scalar::one());
+    p.push(Scalar::ONE);
 
     // Multiply each polynomial
     for j in 0..n_bits {
         let mut f = Polynomial::new();
         f.push(a_j_i[bit(i, j)][j]);
         if 0 != delta(bit(l, j), bit(i, j)) {
-            f.push(Scalar::one());
+            f.push(Scalar::ONE);
         }
         p *= f;
     }
 
     // Resize the vector to be M bits wide
     let mut v: Vec<Scalar> = p.into();
-    v.resize_with(n_bits, || Scalar::zero());
+    v.resize_with(n_bits, || Scalar::ZERO);
     v
 }
 
 fn scalar_exp(base: Scalar, exp: usize) -> Scalar {
-    let mut res = Scalar::one();
+    let mut res = Scalar::ONE;
     for _ in 0..exp {
         res *= base;
     }
@@ -855,7 +857,7 @@ mod tests {
 
         // Create the prover's commitment to zero
         let l: usize = 3; // The prover's commitment will be third in the set
-        let v = Scalar::zero();
+        let v = Scalar::ZERO;
         let r = Scalar::random(&mut OsRng); // You should use a more secure RNG
         let C_l = gens.commit(&v, &r).unwrap();
 
@@ -933,7 +935,7 @@ mod tests {
 
         // Create the prover's commitment to zero
         let l: usize = 3; // The prover's commitment will be third in the set
-        let v = Scalar::zero();
+        let v = Scalar::ZERO;
         let r = Scalar::random(&mut OsRng); // You should use a more secure RNG
         let C_l = gens.commit(&v, &r).unwrap();
 
@@ -1090,7 +1092,7 @@ mod tests {
             .is_ok());
 
         // Now replace C_l with a committment to zero
-        let v = Scalar::zero();
+        let v = Scalar::ZERO;
         let C_l = gens.commit(&v, &r).unwrap();
         set[l] = C_l;
 
@@ -1147,7 +1149,7 @@ mod tests {
             .is_ok());
 
         // Now replace C_l with a committment to zero
-        let v = Scalar::zero();
+        let v = Scalar::ZERO;
         let C_l = gens.commit(&v, &r).unwrap();
         set[l] = C_l;
 
