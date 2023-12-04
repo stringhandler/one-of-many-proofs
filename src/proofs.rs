@@ -77,6 +77,20 @@ impl BitProof {
             new_len + 64,
         ))
     }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.A.compress().to_bytes());
+        bytes.extend_from_slice(&self.C.compress().to_bytes());
+        bytes.extend_from_slice(&self.D.compress().to_bytes());
+        bytes.extend_from_slice(&self.f1_j.len().to_le_bytes());
+        for f in &self.f1_j {
+            bytes.extend_from_slice(&f.to_bytes());
+        }
+        bytes.extend_from_slice(&self.z_A.to_bytes());
+        bytes.extend_from_slice(&self.z_C.to_bytes());
+        bytes
+    }
 }
 
 /// A zero knowledge proof of membership in a set. A prover can convince a
@@ -111,6 +125,18 @@ impl OneOfManyProof {
             G_k,
             z,
         })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.B.compress().to_bytes());
+        bytes.extend_from_slice(&self.bit_proof.to_bytes());
+        bytes.extend_from_slice(&self.G_k.degree().to_le_bytes());
+        for g in self.G_k.iter() {
+            bytes.extend_from_slice(&g.compress().to_bytes());
+        }
+        bytes.extend_from_slice(&self.z.to_bytes());
+        bytes
     }
 }
 
