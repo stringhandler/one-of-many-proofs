@@ -69,7 +69,6 @@ impl BitProof {
                     .ok_or_else(|| ProofSerializeError::InvalidScalar("f1_j"))
             })
             .collect::<Result<_, _>>()?;
-        let new_len = 97 + len * 32;
         let mut new_buf = [0u8; 32];
         new_buf.copy_from_slice(&bytes[97 + len * 32..129 + len * 32]);
         let z_a = Option::from(Scalar::from_canonical_bytes(new_buf))
@@ -90,7 +89,7 @@ impl BitProof {
                 z_A: z_a,
                 z_C: z_c,
             },
-            new_len + 64,
+            161 + len * 32,
         ))
     }
 
