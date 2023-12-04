@@ -113,11 +113,14 @@ impl OneOfManyProof {
         let poly_len = bytes[new_len] as usize;
         let mut G_k = Polynomial::new();
         for i in 0..poly_len {
-            let g = CompressedRistretto::from_slice(&bytes[new_len + 1 + i * 32..]).ok()?;
+            let g = CompressedRistretto::from_slice(
+                &bytes[new_len + 1 + i * 32..new_len + 33 + i * 32],
+            )
+            .ok()?;
             G_k[i] = g.decompress()?;
         }
         let mut new_buf = [0u8; 32];
-        new_buf.copy_from_slice(&bytes[new_len + 1 + poly_len * 32..]);
+        new_buf.copy_from_slice(&bytes[new_len + 1 + poly_len * 32..new_len + 33 + poly_len * 32]);
         let z = Scalar::from_bytes_mod_order(new_buf);
         Some(OneOfManyProof {
             B: b.decompress()?,
