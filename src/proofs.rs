@@ -125,7 +125,8 @@ impl OneOfManyProof {
     pub fn from_bytes(bytes: &[u8]) -> Result<OneOfManyProof, ProofSerializeError> {
         let b = CompressedRistretto::from_slice(&bytes[0..32])
             .map_err(|e| ProofSerializeError::InvalidPublicKey("b"))?;
-        let (bit_proof, new_len) = BitProof::from_bytes(&bytes[32..])?;
+        let (bit_proof, mut new_len) = BitProof::from_bytes(&bytes[32..])?;
+        new_len += 32;
         let poly_len = bytes[new_len] as usize;
         let mut G_k = Polynomial::new();
         for i in 0..poly_len {
