@@ -225,7 +225,7 @@ impl ProofGens {
     /// let mut t = Transcript::new(b"doctest example");
     /// let (B, proof, x) = gens.commit_bits(&mut t, l, &a_j).unwrap();
     /// ```
-    #[cfg(rand)]
+    #[cfg(feature = "rand_core")]
     pub fn commit_bits(
         &self,
         transcript: &mut Transcript,
@@ -496,7 +496,7 @@ pub trait OneOfManyProofs {
     /// zero, and  also its blinding factor, `r`.
     ///
     /// Note: this is just a convenience wrapper around `prove_with_offset()`.
-    #[cfg(rand)]
+    #[cfg(feature = "rand_core")]
     fn prove(
         &self,
         gens: &ProofGens,
@@ -520,7 +520,7 @@ pub trait OneOfManyProofs {
         self.verify_with_offset(gens, transcript, proof, None)
     }
 
-    #[cfg(rand)]
+    #[cfg(feature = "rand_core")]
     /// Prove knowledge of a commitment opening to any value.
     fn prove_with_offset(
         &self,
@@ -571,7 +571,7 @@ impl<'a, I> OneOfManyProofs for I
 where
     I: Iterator<Item = &'a RistrettoPoint> + Clone,
 {
-    #[cfg(rand)]
+    #[cfg(feature = "rand_core")]
     fn prove_with_offset(
         &self,
         gens: &ProofGens,
