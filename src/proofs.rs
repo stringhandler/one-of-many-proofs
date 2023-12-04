@@ -83,7 +83,7 @@ impl BitProof {
         bytes.extend_from_slice(&self.A.compress().to_bytes());
         bytes.extend_from_slice(&self.C.compress().to_bytes());
         bytes.extend_from_slice(&self.D.compress().to_bytes());
-        bytes.extend_from_slice(&self.f1_j.len().to_le_bytes());
+        bytes.extend_from_slice(&(self.f1_j.len() as u8).to_le_bytes());
         for f in &self.f1_j {
             bytes.extend_from_slice(&f.to_bytes());
         }
@@ -131,7 +131,7 @@ impl OneOfManyProof {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.B.compress().to_bytes());
         bytes.extend_from_slice(&self.bit_proof.to_bytes());
-        bytes.extend_from_slice(&self.G_k.degree().to_le_bytes());
+        bytes.extend_from_slice(&(self.G_k.degree() as u8).to_le_bytes());
         for g in self.G_k.iter() {
             bytes.extend_from_slice(&g.compress().to_bytes());
         }
