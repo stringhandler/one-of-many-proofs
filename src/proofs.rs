@@ -32,6 +32,13 @@ pub struct ProofGens {
     H: Vec<RistrettoPoint>,
 }
 
+#[derive(Debug, Clone)]
+pub enum ProofSerializeError {
+    InvalidPublicKey(&'static str),
+    InvalidScalar(&'static str),
+    CantDecompress(&'static str),
+}
+
 /// A bit commitment proof. This is used as part of a [`OneOfManyProof`] and
 /// not meant for use on its own. A zero knowledge proof that the prover knows
 /// the openings of commitments to a sequence of bits.
@@ -46,30 +53,39 @@ pub struct BitProof {
 }
 
 impl BitProof {
-    pub fn from_bytes(bytes: &[u8]) -> Option<(BitProof, usize)> {
-        let a = CompressedRistretto::from_slice(&bytes[0..32]).ok()?;
-        let c = CompressedRistretto::from_slice(&bytes[32..64]).ok()?;
-        let d = CompressedRistretto::from_slice(&bytes[64..96]).ok()?;
+    pub fn from_bytes(bytes: &[u8]) -> Result<(BitProof, usize), ProofSerializeError> {
+        let a = CompressedRistretto::from_slice(&bytes[0..32])
+            .map_err(|e| ProofSerializeError::InvalidPublicKey("a"))?;
+        let c = CompressedRistretto::from_slice(&bytes[32..64])
+            .map_err(|e| ProofSerializeError::InvalidPublicKey("c"))?;
+        let d = CompressedRistretto::from_slice(&bytes[64..96])
+            .map_err(|e| ProofSerializeError::InvalidPublicKey("d"))?;
         let len = bytes[96] as usize;
         let f1_j = (0..len)
             .map(|i| {
                 let mut new_buf = [0u8; 32];
                 new_buf.copy_from_slice(&bytes[97 + i * 32..129 + i * 32]);
-                Scalar::from_canonical_bytes(new_buf).expect("Invalid scalar")
+                Option::from(Scalar::from_canonical_bytes(new_buf))
+                    .ok_or_else(|| ProofSerializeError::InvalidScalar("f1_j"))
             })
-            .collect::<Vec<Scalar>>();
+            .collect::<Result<_, _>>()?;
         let new_len = bytes[97 + len * 32] as usize;
         let mut new_buf = [0u8; 32];
         new_buf.copy_from_slice(&bytes[98 + len * 32..130 + len * 32]);
-        let z_a = Scalar::from_bytes_mod_order(new_buf);
+        let z_a = Option::from(Scalar::from_canonical_bytes(new_buf))
+            .ok_or_else(|| ProofSerializeError::InvalidScalar("z_a"))?;
         let mut new_buf = [0u8; 32];
         new_buf.copy_from_slice(&bytes[130 + len * 32..162 + len * 32]);
-        let z_c = Scalar::from_bytes_mod_order(new_buf);
-        Some((
+        let z_c = Option::from(Scalar::from_canonical_bytes(new_buf))
+            .ok_or_else(|| ProofSerializeError::InvalidScalar("z_c"))?;
+        Ok((
             BitProof {
-                A: a.decompress()?,
-                C: c.decompress()?,
-                D: d.decompress()?,
+                A: a.decompress()
+                    .ok_or_else(|| ProofSerializeError::CantDecompress("a"))?,
+                C: c.decompress()
+                    .ok_or_else(|| ProofSerializeError::CantDecompress("c"))?,
+                D: d.decompress()
+                    .ok_or_else(|| ProofSerializeError::CantDecompress("d"))?,
                 f1_j,
                 z_A: z_a,
                 z_C: z_c,
@@ -107,8 +123,9 @@ pub struct OneOfManyProof {
 }
 
 impl OneOfManyProof {
-    pub fn from_bytes(bytes: &[u8]) -> Option<OneOfManyProof> {
-        let b = CompressedRistretto::from_slice(&bytes[0..32]).ok()?;
+    pub fn from_bytes(bytes: &[u8]) -> Result<OneOfManyProof, ProofSerializeError> {
+        let b = CompressedRistretto::from_slice(&bytes[0..32])
+            .map_err(|e| ProofSerializeError::InvalidPublicKey("b"))?;
         let (bit_proof, new_len) = BitProof::from_bytes(&bytes[32..])?;
         let poly_len = bytes[new_len] as usize;
         let mut G_k = Polynomial::new();
@@ -116,14 +133,17 @@ impl OneOfManyProof {
             let g = CompressedRistretto::from_slice(
                 &bytes[new_len + 1 + i * 32..new_len + 33 + i * 32],
             )
-            .ok()?;
-            G_k[i] = g.decompress()?;
+            .map_err(|e| ProofSerializeError::InvalidPublicKey("G_k[]"))?;
+            G_k[i] = g
+                .decompress()
+                .ok_or_else(|| ProofSerializeError::CantDecompress("G_k"))?;
         }
         let mut new_buf = [0u8; 32];
         new_buf.copy_from_slice(&bytes[new_len + 1 + poly_len * 32..new_len + 33 + poly_len * 32]);
         let z = Scalar::from_bytes_mod_order(new_buf);
-        Some(OneOfManyProof {
-            B: b.decompress()?,
+        Ok(OneOfManyProof {
+            B: b.decompress()
+                .ok_or_else(|| ProofSerializeError::CantDecompress("b"))?,
             bit_proof,
             G_k,
             z,
