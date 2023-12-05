@@ -37,6 +37,7 @@ pub enum ProofSerializeError {
     InvalidPublicKey(&'static str),
     InvalidScalar(&'static str),
     CantDecompress(&'static str),
+    BadCbor,
 }
 
 /// A bit commitment proof. This is used as part of a [`OneOfManyProof`] and
@@ -160,6 +161,16 @@ impl OneOfManyProof {
         }
         bytes.extend_from_slice(&self.z.to_bytes());
         bytes
+    }
+
+    #[cfg(feature = "cbor")]
+    pub fn to_cbor(&self) -> Vec<u8> {
+        serde_cbor::to_vec(self).unwrap()
+    }
+
+    #[cfg(feature = "cbor")]
+    pub fn from_cbor(bytes: &[u8]) -> Result<OneOfManyProof, ProofSerializeError> {
+        serde_cbor::from_slice(bytes).map_err(|_| ProofSerializeError::BadCbor)
     }
 }
 

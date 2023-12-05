@@ -10,6 +10,7 @@ repository = "https://github.com/cargodog/one-of-many-proofs"
 [dependencies]
 rand = { version = "0.8", optional = true }
 polynomials = "0.2"
+serde_cbor = { version = "0.11", optional = true }
 
 [dependencies.curve25519-dalek]
 version = "4.1.1"
@@ -37,6 +38,7 @@ serde_cbor = "0.11"
 default = ["std", "serde"]
 std = []
 rand_core = ["rand"]
+cbor = ["serde_cbor"]
 
 [[bench]]
 name = "proof_benchmarks"
